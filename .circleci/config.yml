@@ -34,7 +34,7 @@ jobs:
           name: push image
           command: |
             echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
-            docker push "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}" .
+            docker push "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}"
         
 
 
