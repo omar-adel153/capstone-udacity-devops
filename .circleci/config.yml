@@ -19,9 +19,27 @@ jobs:
       - save_cache:
           paths: [ node3-weather-app/node_modules ]
           key: server-build
+  
+  build-push-docker:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: build image
+          command: |
+            cd node3-weather-app/
+            echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
+            docker build -t "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}" .
+      - run:
+          name: push image
+          command: |
+            echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
+            docker push "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}" .
+        
 
 
 workflows:
   default:
     jobs:
       - lint-server
+      - build-push-docker
