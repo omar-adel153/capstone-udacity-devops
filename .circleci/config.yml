@@ -1,0 +1,27 @@
+version: 2.1
+
+jobs:
+  lint-server:
+    docker:
+      - image: circleci/node:14
+    working_directory: /tmp/workspace
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [ server-build ]
+      - run:
+          name: lint server
+          command: |
+            cd node3-weather-app/
+            npm i
+            npm install eslint --save-dev 
+            npm run lint
+      - save_cache:
+          paths: [ node3-weather-app/node_modules ]
+          key: server-build
+
+
+workflows:
+  default:
+    jobs:
+      - lint-server
