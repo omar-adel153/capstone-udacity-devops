@@ -97,6 +97,7 @@ jobs:
           name: smoke test
           command: |
             BACKEND_URL=$(curl -s -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request GET https://api.memstash.io/values/backend_ip)
+            sleep 2m
             if curl -s ${BACKEND_URL} | grep "Weather"
             then
               exit 0
