@@ -1,5 +1,18 @@
 version: 2.1
 
+
+commands:
+  destroy-environment:
+    description: Destroy environment.
+    docker:
+      - image: alpine/k8s:1.15.12
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            eksctl delete cluster --name="weather-app-${CIRCLE_WORKFLOW_ID}"
+
 jobs:
   lint-server:
     docker:
@@ -88,9 +101,22 @@ jobs:
             then
               exit 0
             else
+              echo "URL Does not work"
               exit 1
             fi
+      - destroy-environment
 
+  delete-old-cluster:
+    docker:
+      - image: alpine/k8s:1.15.12
+    steps:
+      - run:
+          name: delete old clusters
+          command: |
+            aws eks update-kubeconfig --name "weather-app-${CIRCLE_WORKFLOW_ID}"
+            export KUBECONFIG=/root/.kube/config
+            cluster_name=$(curl -s -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request GET https://api.memstash.io/values/old_cluster)
+            eksctl delete cluster --name=$cluster_name
 
 
 workflows:
@@ -102,4 +128,6 @@ workflows:
       - create-kubernetes-cluster:
           requires: [ build-push-docker ]
       - smoke-test:
-          requires: [create-kubernetes-cluster]
+          requires: [ create-kubernetes-cluster ]
+      - delete-old-cluster:
+          requires: [ smoke-test ]
