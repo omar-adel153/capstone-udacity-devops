@@ -83,6 +83,6 @@ workflows:
     jobs:
       - lint-server
       - build-push-docker
-          requires: [ lint-server ]
+        requires: [ lint-server ]
       - create-kubernetes-cluster
-          requires: [ build-push-docker ]
+        requires: [ build-push-docker ]
