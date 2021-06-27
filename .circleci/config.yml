@@ -69,12 +69,8 @@ jobs:
       - run:
           name: add backend service ip to a file
           command: |
-            BACKEND_IP=$(kubectl get services weather-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            curl -H "Content-Type: text/plain" -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/backend_ip
-      - persist_to_workspace:
-          root: /tmp/workspace
-          paths:
-            - kubeconfig/kube_config.yaml
+            BACKEND_URL=$(kubectl get services weather-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            curl -H "Content-Type: text/plain" -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request PUT --data "http://${BACKEND_URL}:3000/" https://api.memstash.io/values/backend_ip
 
   smoke-test:
     docker:
@@ -87,8 +83,8 @@ jobs:
       - run:
           name: smoke test
           command: |
-            BACKEND_IP=$(curl -s -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request GET https://api.memstash.io/values/backend_ip)
-            if curl -s ${BACKEND_IP} | grep "Weather"
+            BACKEND_URL=$(curl -s -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request GET https://api.memstash.io/values/backend_ip)
+            if curl -s ${BACKEND_URL} | grep "Weather"
             then
               exit 0
             else
