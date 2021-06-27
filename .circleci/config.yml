@@ -104,7 +104,6 @@ jobs:
               echo "URL Does not work"
               exit 1
             fi
-      - destroy-environment
 
   delete-old-cluster:
     docker:
