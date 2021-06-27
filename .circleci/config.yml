@@ -58,7 +58,7 @@ jobs:
       - run:
           name: get old cluster name
           command: |
-            OLD_CLUSTER_ID=$(aws eks list-clusters --query 'clusters[0]')
+            OLD_CLUSTER_ID=$(aws eks list-clusters --query 'clusters[0]' --output text)
             curl -H "Content-Type: text/plain" -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request PUT --data ${OLD_CLUSTER_ID} https://api.memstash.io/values/old_cluster
       - run:
           name: create kubernetes cluster
