@@ -51,7 +51,8 @@ jobs:
           command: |
             eksctl create cluster --name="weather-app-${CIRCLE_WORKFLOW_ID}" \
             --nodes-min=1 --nodes-max=2 \
-            --node-type=t3.medium
+            --node-type=t3.medium \
+            --zones=us-east-1a,us-east-1b,us-east-1d
 
 
       - run:
