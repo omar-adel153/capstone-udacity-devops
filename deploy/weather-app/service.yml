@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: weather-app-service
+spec:
+  selector:
+    app: weather-app-container
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: LoadBalancer

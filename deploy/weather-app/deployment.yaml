@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-app
+  labels:
+    app: weather-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-app-container
+  template:
+    metadata:
+      labels:
+        app: weather-app-container
+    spec:
+      containers:
+        - name: weather-app
+          image: omaradel153/weather-app
+          ports:
+            - containerPort: 3000
+          command: [ "/bin/sh" ]
+          args: ["npm", "run", "start"]

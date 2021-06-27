@@ -35,7 +35,47 @@ jobs:
           command: |
             echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
             docker push "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}"
-        
+
+  create-kubernetes-cluster:
+    docker:
+      - image: alpine/k8s:1.15.12
+    working_directory: /tmp/workspace
+    steps:
+      - checkout
+      - run:
+          name: get old cluster name
+          command: |
+            aws eks list-clusters --query 'clusters[0]' > cluster.txt
+      - run:
+          name: create kubernetes cluster
+          command: |
+            eksctl create cluster --name="weather-app-${CIRCLE_WORKFLOW_ID}" \
+            --nodes-min=1 --nodes-max=2 \
+            --node-type=t3.medium
+
+
+      - run:
+          name: create kubernetes resources
+          command: |
+            aws eks update-kubeconfig --name "weather-app-${CIRCLE_WORKFLOW_ID}"
+            export KUBECONFIG=/root/.kube/config
+            kubectl create secret docker-registry regcred --docker-username=$DOCKER_USER --docker-password=$DOCKER_PASS --docker-email=omar.adelmohammed@gmail.com
+            cd deploy
+            kubectl apply -f weather-app
+            kubectl rollout status deployment weather-app
+
+      - run:
+          name: add backend service ip to a file
+          command: |
+            echo "$(kubectl get services weather-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > backend-service.txt
+            cat backend-service.txt
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - backend-service.txt
+            - kubeconfig/kube_config.yaml
+            - cluster.txt
+
 
 
 workflows:
@@ -43,3 +83,6 @@ workflows:
     jobs:
       - lint-server
       - build-push-docker
+          requires: [ lint-server ]
+      - create-kubernetes-cluster
+          requires: [ build-push-docker ]
