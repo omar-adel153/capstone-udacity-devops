@@ -4,13 +4,13 @@ version: 2.1
 commands:
   destroy-environment:
     description: Destroy environment.
-    docker:
-      - image: alpine/k8s:1.15.12
     steps:
       - run:
           name: Destroy environments
           when: on_fail
           command: |
+            aws eks update-kubeconfig --name "weather-app-${CIRCLE_WORKFLOW_ID}"
+            export KUBECONFIG=/root/.kube/config
             eksctl delete cluster --name="weather-app-${CIRCLE_WORKFLOW_ID}"
 
 jobs:
