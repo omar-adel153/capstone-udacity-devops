@@ -19,5 +19,3 @@ spec:
           image: omaradel153/weather-app
           ports:
             - containerPort: 3000
-          command: [ "/bin/sh" ]
-          args: ["npm", "run", "start"]

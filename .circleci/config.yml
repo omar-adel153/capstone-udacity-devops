@@ -29,12 +29,12 @@ jobs:
           command: |
             cd node3-weather-app/
             echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
-            docker build -t "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}" .
+            docker build -t "omaradel153/weather-app" .
       - run:
           name: push image
           command: |
             echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
-            docker push "omaradel153/weather-app:${CIRCLE_WORKFLOW_ID}"
+            docker push "omaradel153/weather-app"
 
   create-kubernetes-cluster:
     docker:
@@ -45,7 +45,8 @@ jobs:
       - run:
           name: get old cluster name
           command: |
-            aws eks list-clusters --query 'clusters[0]' > cluster.txt
+            OLD_CLUSTER_ID=$(aws eks list-clusters --query 'clusters[0]')
+            curl -H "Content-Type: text/plain" -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request PUT --data "${OLD_CLUSTER_ID}" https://api.memstash.io/values/old_cluster
       - run:
           name: create kubernetes cluster
           command: |
@@ -68,14 +69,31 @@ jobs:
       - run:
           name: add backend service ip to a file
           command: |
-            echo "$(kubectl get services weather-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')" > backend-service.txt
-            cat backend-service.txt
+            BACKEND_IP=$(kubectl get services weather-app-service --output jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            curl -H "Content-Type: text/plain" -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request PUT --data "${BACKEND_IP}" https://api.memstash.io/values/backend_ip
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
-            - backend-service.txt
             - kubeconfig/kube_config.yaml
-            - cluster.txt
+
+  smoke-test:
+    docker:
+      - image: alpine/k8s:1.15.12
+    working_directory: /tmp/workspace
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: smoke test
+          command: |
+            BACKEND_IP=$(curl -s -H "token: e4232a90-f3c7-4bc6-8242-c0f33ab2b76d" --request GET https://api.memstash.io/values/backend_ip)
+            if curl -s ${BACKEND_IP} | grep "Weather"
+            then
+              exit 0
+            else
+              exit 1
+            fi
 
 
 
@@ -87,3 +105,5 @@ workflows:
           requires: [ lint-server ]
       - create-kubernetes-cluster:
           requires: [ build-push-docker ]
+      - smoke-test:
+          requires: [create-kubernetes-cluster]
